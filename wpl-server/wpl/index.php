@@ -4,7 +4,7 @@
 	
 	$link=Connection();
 
-	$result=mysqli_query($link, "SELECT * FROM wpl ORDER BY data_misurazione DESC");
+	$result=mysqli_query($link, "SELECT distanza, volume_residuo, data_misurazione FROM wpl ORDER BY data_misurazione DESC");
 ?>
 
 <html>
