@@ -3,11 +3,11 @@
    	
    	$link=Connection();
 
-	$temp1=$_POST["temp1"];
-	$hum1=$_POST["hum1"];
+	$distanza=$_POST["dist"];
+	$volume=$_POST["vol"];
 
-	$query = "INSERT INTO `tempLog` (`temperature`, `humidity`) 
-		VALUES ('".$temp1."','".$hum1."')"; 
+	$query = "INSERT INTO 'wpl' ('distanza', 'volume_residuo', 'data_misurazione') 
+		VALUES ('".$distanza."','".$volume."', time())"; 
    	
    	mysql_query($query,$link);
 	mysql_close($link);
