@@ -1,2 +1,4 @@
 # fjordoprj-wpl
-Arduino based water level measurator
+Arduino Yun based water level measurator.
+
+It sends data to a web space and register well water level.
