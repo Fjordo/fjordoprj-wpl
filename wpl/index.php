@@ -29,8 +29,8 @@
 		           $row["distanza"], $row["volume_residuo"], $row["data_misurazione"]);
 		     }
 		     mysqli_free_result($result);
-		     mysqli_close();
-		  }
+			}
+			mysqli_close();
       ?>
 
    </table>
