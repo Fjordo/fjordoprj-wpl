@@ -1,9 +1,9 @@
 <?php
 
 	function Connection(){
-		$server="localhost";
-		$user="fjordoprj";
-		$pass="";
+		$server="my_ip_address";
+		$user="my_username";
+		$pass="my_password";
 		$db="my_fjordoprj";
 	   	
 		$connection = mysqli_connect($server, $user, $pass, $db);
