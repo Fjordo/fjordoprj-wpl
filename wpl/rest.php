@@ -8,7 +8,7 @@ $request = explode('/', trim($_SERVER['PATH_INFO'],'/'));
 $input = json_decode(file_get_contents('php://input'),true);
 
 // connect to the mysql database
-$link = mysqli_connect('localhost', 'fjordoprj', '', 'my_fjordoprj');
+$link = mysqli_connect('my_ip_address', 'my_username', 'my_password', 'my_fjordoprj');
 mysqli_set_charset($link,'utf8');
 
 // retrieve the table and key from the path
@@ -32,7 +32,7 @@ $set.=($values[$i]===null?'NULL':'"'.$values[$i].'"');
 // create SQL based on HTTP method
 switch ($method) {
 case 'GET':
-    $sql = "SELECT distanza, data_misurazione FROM wpl ORDER BY data_misurazione DESC"; break;
+    $sql = "SELECT distanza, volume_residuo, data_misurazione FROM wpl ORDER BY data_misurazione DESC"; break;
 case 'PUT':
     $sql = "SELECT distanza, volume_residuo, data_misurazione FROM wpl ORDER BY data_misurazione DESC"; break;
 case 'POST':

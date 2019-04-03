@@ -125,7 +125,8 @@ void loop() {
   sendData(distance, volume);
 
   //Delay 3600000 mS (1 hour) before next reading.
-  delay(1000);
+  delay(3600000);
+  //delay(86400000);
 }
 
 
