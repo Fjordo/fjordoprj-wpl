@@ -28,11 +28,11 @@ function calcolaDistanze(misurazioni) {
 function calcolaVolumi(misurazioni) {
     console.log("Calcolo Volumi");
 
-    misurazioni.forEach(misurazione => {
-        // console.log(misurazione);
-        // misurazione["data_misurazione"];
-        // console.log(misurazione["data_misurazione"]);
-    });
+    // misurazioni.forEach(misurazione => {
+    //     // console.log(misurazione);
+    //     // misurazione["data_misurazione"];
+    //     // console.log(misurazione["data_misurazione"]);
+    // });
 
     https://stackoverflow.com/questions/1078118/how-do-i-iterate-over-a-json-structure
 
