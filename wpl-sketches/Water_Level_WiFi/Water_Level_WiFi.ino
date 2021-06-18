@@ -48,14 +48,15 @@
 // initialize the library with the numbers of the interface pins
 LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
 
-int maximumRange = 200; // Maximum range needed in cm
-int minimumRange = 0; // Minimum range needed
+int maximumRange = 200;  // Maximum range needed in cm
+int minimumRange = 0;    // Minimum range needed
 long duration, distance; // Duration used to calculate distance
-double volume; // residual volume
+double volume;           // residual volume
 
 String server = "http://fjordoprj.altervista.org";
 
-void setup() {
+void setup()
+{
   // Initialize Bridge
   Bridge.begin();
 
@@ -66,14 +67,14 @@ void setup() {
   lcd.print("distanza in cm!");
 
   // set up the SONAR
-  Serial.begin (9600);
+  Serial.begin(9600);
   pinMode(trigPin, OUTPUT);
   pinMode(echoPin, INPUT);
   pinMode(LEDPin, OUTPUT); // Use LED indicator (if required)
-
 }
 
-void loop() {
+void loop()
+{
 
   /* The following trigPin/echoPin cycle is used to determine the
     distance of the nearest object by bouncing soundwaves off of it. */
@@ -89,7 +90,8 @@ void loop() {
   // Calculate the distance (in cm) based on the speed of sound.
   distance = duration / 58.2;
 
-  if (distance >= maximumRange || distance <= minimumRange) {
+  if (distance >= maximumRange || distance <= minimumRange)
+  {
     // set the cursor to column 0, line 1
     // (note: line 1 is the second row, since counting begins with 0):
     lcd.setCursor(0, 1);
@@ -98,13 +100,15 @@ void loop() {
     lcd.print("-1");
     digitalWrite(LEDPin, HIGH);
   }
-  else {
+  else
+  {
     /* Send the distance to the computer using Serial protocol, and
       turn LED OFF to indicate successful reading. */
 
     lcd.setCursor(0, 1);
     // print the distance in cm:
-    if (distance < 10) {
+    if (distance < 10)
+    {
       lcd.clear();
       lcd.print("distanza in cm!");
       lcd.setCursor(0, 1);
@@ -124,31 +128,33 @@ void loop() {
   */
   sendData(distance, volume);
 
-  //Delay 3600000 mS (1 hour) before next reading.
+  // Delay 3600000 mS (1 hour) before next reading.
   delay(3600000);
-  //delay(86400000);
+  // delay(86400000);
 }
 
+double computeVolume(long distance)
+{                                         // outer well dimension: base diameter of 2.5 meters, 2,5 meters of height
+  int wellHeight = 22;                    // measure in decimeters
+  double diametroCisterna = 23;           // measure in decimeters
+  int waterHeight = (distance - 40) / 10; // subtract a default of 4 decimeters from the height measured by the sensor
 
-double computeVolume(long distance) {  // outer well dimension: base diameter of 2.5 meters, 2,5 meters of height
-  int altezzaCisterna = 22; // measure in decimeters
-  double diametroCisterna = 23; // measure in decimeters
-  int altezzaAcqua = (distance - 40) / 10; // subtract a default of 4 decimeters from the height measured by the sensor
+  long realHeight = wellHeight;
 
-  long altezzaEffettiva = altezzaCisterna;
-
-  if (altezzaAcqua > 0) {
-    altezzaEffettiva = altezzaCisterna - altezzaAcqua;
+  if (waterHeight > 0)
+  {
+    realHeight = wellHeight - waterHeight;
   }
 
   double base = 11.5 * 11.5 * 3.1419;
 
-  return (base * altezzaEffettiva);
+  return (base * realHeight);
 }
 
-void sendData(long distance, double volume) {
+void sendData(long distance, double volume)
+{
 
-  Process p;        // Create a process and call it "p"
+  Process p; // Create a process and call it "p"
 
   p.runShellCommand("curl -X POST https://fjordoprj.altervista.org/wpl/add.php -F dist=" + (String)distance + " -F vol=" + (String)volume);
 
