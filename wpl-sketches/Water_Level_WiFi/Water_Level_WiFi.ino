@@ -1,11 +1,11 @@
 
 /*
-  Sketch per Arduino YUN.
-  Utilizza un sensore sonar e un pannello a LCD 16*x2
-  per mostrare la distanza a cui si trova l'oggetto puntato dal sensore.
-  Invia il dato letto dal sensore e altri calcolati ad un server remoto mediante una chiamata POST
+  Arduino YUN Sketch.
+  Uses a sonar sensor and an LCD 16*x2 panel
+  to show the distance from an object aimed by the sensor.
+  Sends the sensor readed data, and other computed data, to a remote server with a POST call.
 
-  Schema Circuito:
+  Circuit Scheme:
    LCD RS pin to digital pin 12
    LCD Enable pin to digital pin 11
    LCD D4 pin to digital pin 5
@@ -32,8 +32,8 @@
 
   -----------------------
   CONF. WI-FI
-  Arduino YUN deve essere preventivamente configurato, mediante onfigurazione iniziale.
-  Si rimanda a https://www.twilio.com/blog/2015/02/arduino-wifi-getting-started-arduino-yun.html per una guida.
+  Arduino YUN wi-fi has to be previously configured.
+  See https://www.twilio.com/blog/2015/02/arduino-wifi-getting-started-arduino-yun.html for a guide.
 
 */
 
@@ -86,7 +86,7 @@ void loop() {
   digitalWrite(trigPin, LOW);
   duration = pulseIn(echoPin, HIGH);
 
-  //Calculate the distance (in cm) based on the speed of sound.
+  // Calculate the distance (in cm) based on the speed of sound.
   distance = duration / 58.2;
 
   if (distance >= maximumRange || distance <= minimumRange) {
@@ -130,10 +130,10 @@ void loop() {
 }
 
 
-double computeVolume(long distance) {  // Dimensioni esterne cisterna: diametro base di 2.5 metri, altezza di 2.5 metri
-  int altezzaCisterna = 22; // misura in decimetri
-  double diametroCisterna = 23; // dm
-  int altezzaAcqua = (distance - 40) / 10; // sottraggo 4 decimetri di default rispetto all'altezza misurata dal sensore
+double computeVolume(long distance) {  // outer well dimension: base diameter of 2.5 meters, 2,5 meters of height
+  int altezzaCisterna = 22; // measure in decimeters
+  double diametroCisterna = 23; // measure in decimeters
+  int altezzaAcqua = (distance - 40) / 10; // subtract a default of 4 decimeters from the height measured by the sensor
 
   long altezzaEffettiva = altezzaCisterna;
 
