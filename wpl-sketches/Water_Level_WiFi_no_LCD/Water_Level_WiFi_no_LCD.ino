@@ -1,4 +1,3 @@
-
 /*
   Arduino YUN Sketch.
   Uses a sonar sensor to show the distance from an object aimed by the sensor.
@@ -17,7 +16,7 @@
     You only need to supply a short 10uS pulse to the trigger input to start the ranging, and then the module will send out an 8 cycle burst of ultrasound at 40 kHz and raise its echo.
     The Echo is a distance object that is pulse width and the range in proportion.
     You can calculate the range through the time interval between sending trigger signal and receiving echo signal.
-    Formula: uS / 58 = centimeters or uS / 148 = inch; 
+    Formula: uS / 58 = centimeters or uS / 148 = inch;
     or: the range = high level time * velocity (340M/S) / 2;
     we suggest to use over 60ms measurement cycle, in order to prevent trigger signal to the echo signal.
 
@@ -43,6 +42,7 @@
 int maximumRange = 300;  // Maximum range needed in cm
 int minimumRange = 0;    // Minimum range needed
 long duration, distance; // Duration used to calculate distance
+long durata;             // Duration used to calculate mean
 double volume;           // residual volume
 
 String server = "http://fjordoprj.altervista.org";
@@ -64,17 +64,31 @@ void loop()
   /* The following trigPin/echoPin cycle is used to determine the
     distance of the nearest object by bouncing soundwaves off of it. */
 
-  // Clears the trigPin condition
-  digitalWrite(trigPin, LOW);
-  delayMicroseconds(2);
+  int i = 0;
 
-  // Sets the trigPin HIGH (ACTIVE) for 10 microseconds to start the trigger
-  digitalWrite(trigPin, HIGH);
-  delayMicroseconds(10);
-  digitalWrite(trigPin, LOW);
+  while (i < 10) {
 
-  // Reads the echoPin, returns the sound wave travel time in microseconds
-  duration = pulseIn(echoPin, HIGH);
+    // Clears the trigPin condition
+    digitalWrite(trigPin, LOW);
+    delayMicroseconds(2);
+
+    // Sets the trigPin HIGH (ACTIVE) for 10 microseconds to start the trigger
+    digitalWrite(trigPin, HIGH);
+    delayMicroseconds(10);
+    digitalWrite(trigPin, LOW);
+
+    // Reads the echoPin, returns the sound wave travel time in microseconds
+    durata = pulseIn(echoPin, HIGH);
+
+    Serial.print(durata);
+
+    duration = durata + duration;
+
+    Serial.print(duration);
+    i++;
+  }
+
+  duration = duration / 10;
 
   // Calculating the distance
   distance = duration * 0.034 / 2; // Speed of sound wave divided by 2 (go and back)
@@ -96,32 +110,36 @@ void loop()
   sendData(distance, volume);
 
   // Delay 3600000 mS (1 hour) before next reading.
-  delay(3600000);
+  delay(100000);
   // delay(86400000);
 }
 
 /**
- * Computes the water volume inside the well
- * the sensor is about 40 cm over the maximum water level, so I compensate this subtracting 40 cm.
- */
+   Computes the water volume inside the well
+   the sensor is about 40 cm over the maximum water level, so I compensate this subtracting 40 cm.
+*/
 double computeVolume(long distance)
 {
-  // outer well dimension: base diameter of 2.5 meters, 2,5 meters of height
+  // outer well dimension: base diameter of 2 meters, 3 meters of height
   // inner well dimension
-  int wellHeight = 22;                    // measure in decimeters
-  double wellDiameter = 23;               // measure in dm
-  int waterHeight = (distance - 40) / 10; // subtract a default of 4 decimeters from the height measured by the sensor. The total is in decimeters
+  int wellHeight = 30;                    // measure in decimeters
+  double wellDiameter = 20;               // measure in dm
+  double waterHeight = (distance - 40) / 10; // subtract a default of 4 decimeters from the height measured by the sensor. Then compute the total in decimeters
 
-  long realHeight = wellHeight;
+  int realHeight = 0;
 
   if (waterHeight > 0)
   {
     realHeight = wellHeight - waterHeight;
   }
 
+  if (realHeight > 0 {
   double base = wellDiameter * 3.14159;
 
   return (base * realHeight);
+  } else {
+    return -1;
+  }
 }
 
 void sendData(long distance, double volume)

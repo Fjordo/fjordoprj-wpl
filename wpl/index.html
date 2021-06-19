@@ -3,7 +3,7 @@
 <head>
 	<title>Sensor Data</title>
 
-	<script src="https://ajax.aspnetcdn.com/ajax/jQuery/jquery-3.3.1.min.js"></script>
+	<script src="https://ajax.aspnetcdn.com/ajax/jQuery/jquery-3.6.0.min.js"></script>
 
 	<script src="https://code.highcharts.com/highcharts.js"></script>
 	<script src="https://code.highcharts.com/modules/series-label.js"></script>
@@ -20,77 +20,73 @@
 	<script>
 		document.addEventListener('DOMContentLoaded', function () {
 
+			fetch("https://fjordoprj.altervista.org/wpl/rest.php/my_fjordoprj/")
+				.then(response => response.json())
+				.then(data => {
+					misurazioni = data;
 
-			var misurazioni = {
-				"async": true,
-				"crossDomain": true,
-				"url": "http://fjordoprj.altervista.org/wpl/rest.php/my_fjordoprj/",
-				"method": "GET",
-				"headers": {
-					"cache-control": "no-cache"
-				}
-			}
+					var distanze = parseData(data);
 
-			var distanze = calcolaDistanze(misurazioni);
-			var volumi = calcolaVolumi(misurazioni);
-
-			Highcharts.chart('container', {
-				chart: {
-					zoomType: 'x'
-				},
-				title: {
-					text: 'Volume left'
-				},
-				subtitle: {
-					text: document.ontouchstart === undefined ?
-						'Click e trascina nell\'area per zoomare' : 'Pinch to zoom in'
-				},
-				xAxis: {
-					type: 'datetime'
-				},
-				yAxis: {
-					title: {
-						text: 'measured cm'
-					}
-				},
-				legend: {
-					enabled: false
-				},
-				plotOptions: {
-					area: {
-						fillColor: {
-							linearGradient: {
-								x1: 0,
-								y1: 0,
-								x2: 0,
-								y2: 1
-							},
-							stops: [
-								[0, Highcharts.getOptions().colors[0]],
-								[1, Highcharts.Color(Highcharts.getOptions().colors[0]).setOpacity(0).get('rgba')]
-							]
+					Highcharts.chart('container', {
+						chart: {
+							zoomType: 'x'
 						},
-						marker: {
-							radius: 2
+						title: {
+							text: 'Volume left'
 						},
-						lineWidth: 1,
-						states: {
-							hover: {
-								lineWidth: 1
+						subtitle: {
+							text: document.ontouchstart === undefined ?
+								'Click e trascina nell\'area per zoomare' : 'Pinch to zoom in'
+						},
+						xAxis: {
+							type: 'datetime'
+						},
+						yAxis: {
+							title: {
+								text: 'measured cm'
 							}
 						},
-						threshold: null
-					}
-				},
+						legend: {
+							enabled: false
+						},
+						plotOptions: {
+							area: {
+								fillColor: {
+									linearGradient: {
+										x1: 0,
+										y1: 0,
+										x2: 0,
+										y2: 1
+									},
+									stops: [
+										[0, Highcharts.getOptions().colors[0]],
+										[1, Highcharts.Color(Highcharts.getOptions().colors[0]).setOpacity(0).get('rgba')]
+									]
+								},
+								marker: {
+									radius: 2
+								},
+								lineWidth: 1,
+								states: {
+									hover: {
+										lineWidth: 1
+									}
+								},
+								threshold: null
+							}
+						},
 
-				series: [{
-					type: 'area',
-					name: 'distances in cm',
-					data: distanze
-				}]
-			});
-		}
-		);
+						series: [{
+							type: 'area',
+							name: 'distances in cm',
+							data: distanze
+						}]
+					});
+
+				}
+				);
+
+		});
 
 	</script>
 </body>
