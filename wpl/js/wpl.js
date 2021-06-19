@@ -34,7 +34,7 @@ function calcolaVolumi(misurazioni) {
     //     // console.log(misurazione["data_misurazione"]);
     // });
 
-    https://stackoverflow.com/questions/1078118/how-do-i-iterate-over-a-json-structure
+    // https://stackoverflow.com/questions/1078118/how-do-i-iterate-over-a-json-structure
 
 
     var b = [[

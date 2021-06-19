@@ -1,0 +1,5 @@
+{
+    "board": "arduino:avr:yun",
+    "sketch": "wpl-sketches\\Water_Level_WiFi\\Water_Level_WiFi.ino",
+    "port": "COM3"
+}
