@@ -8,8 +8,8 @@
   SONAR (HC-SR04) Ping distance sensor:
     VCC to arduino 5v
     GND to arduino GND
-    Echo to Arduino pin 7
-    Trig to Arduino pin 8
+    Echo to Arduino pin 7, green wire
+    Trig to Arduino pin 8, yellow wire
 
 
     The Timing diagram is shown at https://cdn.sparkfun.com/datasheets/Sensors/Proximity/HCSR04.pdf.
@@ -35,15 +35,15 @@
 #include <LiquidCrystal.h>
 #include <Process.h>
 
-#define echoPin 7 // Echo Pin
-#define trigPin 8 // Trigger Pin
+#define echoPin 7 // Echo Pin, green wire
+#define trigPin 8 // Trigger Pin, yellow wire
 #define LEDPin 13 // Onboard LED
 
 int maximumRange = 300;  // Maximum range needed in cm
 int minimumRange = 0;    // Minimum range needed
-long duration, distance; // Duration used to calculate distance
-long durata;             // Duration used to calculate mean
-double volume;           // residual volume
+double duration, durSum; // Duration used to calculate distance, and variable to calculate the duration mean
+double distance;         // Distance from the water surface
+double volume;           // Residual volume
 
 String server = "http://fjordoprj.altervista.org";
 
@@ -62,7 +62,9 @@ void setup()
 void loop()
 {
   /* The following trigPin/echoPin cycle is used to determine the
-    distance of the nearest object by bouncing soundwaves off of it. */
+    distance of the nearest object by bouncing soundwaves off of it.
+    It gets 10 measures and does an arithmentic mean
+  */
 
   int i = 0;
 
@@ -78,26 +80,28 @@ void loop()
     digitalWrite(trigPin, LOW);
 
     // Reads the echoPin, returns the sound wave travel time in microseconds
-    durata = pulseIn(echoPin, HIGH);
+    durSum = pulseIn(echoPin, HIGH);
 
-    Serial.print(durata);
+    Serial.print(durSum);
 
-    duration = durata + duration;
+    duration = durSum + duration;
 
     Serial.print(duration);
     i++;
   }
 
+  // calculating the duration mean on 10 measurement
   duration = duration / 10;
 
   // Calculating the distance
-  distance = duration * 0.034 / 2; // Speed of sound wave divided by 2 (go and back)
-  // Displays the distance on the Serial Monitor
-  Serial.print("Distance: ");
-  Serial.print(distance);
-  Serial.println(" cm");
-
+  // Speed of sound wave divided by 2 (go and back)
+  distance = duration * 0.034 / 2;
   // distance = duration / 58;
+
+  // Displays the distance on the Serial Monitor
+  Serial.println("Distance: ");
+  Serial.println(distance);
+  Serial.println(" cm");
 
   /*
     COMPUTE VOLUME OF THE WATER IN THE WELL
@@ -110,7 +114,7 @@ void loop()
   sendData(distance, volume);
 
   // Delay 3600000 mS (1 hour) before next reading.
-  delay(100000);
+  delay(10000);
   // delay(86400000);
 }
 
@@ -120,23 +124,14 @@ void loop()
 */
 double computeVolume(long distance)
 {
-  // outer well dimension: base diameter of 2 meters, 3 meters of height
-  // inner well dimension
-  int wellHeight = 30;                    // measure in decimeters
-  double wellDiameter = 20;               // measure in dm
-  double waterHeight = (distance - 40) / 10; // subtract a default of 4 decimeters from the height measured by the sensor. Then compute the total in decimeters
-
-  int realHeight = 0;
-
-  if (waterHeight > 0)
-  {
-    realHeight = wellHeight - waterHeight;
-  }
-
-  if (realHeight > 0 {
-  double base = wellDiameter * 3.14159;
-
-  return (base * realHeight);
+  if (distance > 0) {
+    // outer well dimension: base diameter of 2 meters, 3 meters of height
+    // inner well dimension
+    int wellHeight = 30;                    // measure in decimeters
+    double wellDiameter = 20;               // measure in dm
+    double waterHeight = (distance - 40) / 10; // subtract a default of 4 decimeters from the height measured by the sensor. Then compute the total in decimeters
+    double base = wellDiameter * 3.14159;
+    return (base * waterHeight);
   } else {
     return -1;
   }
