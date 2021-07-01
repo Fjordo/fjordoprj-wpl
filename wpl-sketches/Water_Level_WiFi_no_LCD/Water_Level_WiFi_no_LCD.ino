@@ -91,7 +91,7 @@ void loop()
   }
 
   // calculating the duration mean on 10 measurement
-  duration = duration / 10;
+  // duration = duration / 10;
 
   // Calculating the distance
   // Speed of sound wave divided by 2 (go and back)
@@ -113,9 +113,12 @@ void loop()
   */
   sendData(distance, volume);
 
+  // Delay 10 seconds before next reading.
+  // Delay(10000);
   // Delay 3600000 mS (1 hour) before next reading.
-  delay(10000);
-  // delay(86400000);
+  // Delay(3600000);
+  // 24 h before next reading.
+  delay(86400000);
 }
 
 /**
