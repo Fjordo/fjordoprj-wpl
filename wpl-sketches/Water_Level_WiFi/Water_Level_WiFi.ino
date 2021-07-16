@@ -53,7 +53,7 @@ int minimumRange = 0;    // Minimum range needed
 long duration, distance; // Duration used to calculate distance
 double volume;           // residual volume
 
-String server = "http://fjordoprj.altervista.org";
+String server = "https://fjordoprj.altervista.org";
 
 void setup()
 {

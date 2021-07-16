@@ -45,7 +45,7 @@ double duration, durSum; // Duration used to calculate distance, and variable to
 double distance;         // Distance from the water surface
 double volume;           // Residual volume
 
-String server = "http://fjordoprj.altervista.org";
+String server = "https://fjordoprj.altervista.org";
 
 void setup()
 {
