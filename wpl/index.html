@@ -32,7 +32,7 @@
 							zoomType: 'x'
 						},
 						title: {
-							text: 'Volume left'
+							text: 'Water distance'
 						},
 						subtitle: {
 							text: document.ontouchstart === undefined ?
@@ -43,7 +43,7 @@
 						},
 						yAxis: {
 							title: {
-								text: 'measured cm'
+								text: 'distances in cm'
 							}
 						},
 						legend: {
@@ -78,7 +78,7 @@
 
 						series: [{
 							type: 'area',
-							name: 'distances in cm',
+							name: 'water distance from the sensor',
 							data: distanze
 						}]
 					});
