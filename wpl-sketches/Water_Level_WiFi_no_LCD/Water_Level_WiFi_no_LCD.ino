@@ -45,7 +45,7 @@ double duration, durSum; // Duration used to calculate distance, and variable to
 double distance;         // Distance from the water surface
 double volume;           // Residual volume
 
-String server = "https://fjordoprj.altervista.org";
+String server = "http://fjordoprj.altervista.org";
 
 void setup()
 {
@@ -66,29 +66,30 @@ void loop()
     It gets 10 measures and does an arithmentic mean
   */
 
-  int i = 0;
+  //  int i = 0;
+  duration = 0; //reset value for next cicle
 
-  while (i < 10) {
+  //while (i < 10) {
 
-    // Clears the trigPin condition
-    digitalWrite(trigPin, LOW);
-    delayMicroseconds(2);
+  // Clears the trigPin condition
+  digitalWrite(trigPin, LOW);
+  delayMicroseconds(2);
 
-    // Sets the trigPin HIGH (ACTIVE) for 10 microseconds to start the trigger
-    digitalWrite(trigPin, HIGH);
-    delayMicroseconds(10);
-    digitalWrite(trigPin, LOW);
+  // Sets the trigPin HIGH (ACTIVE) for 10 microseconds to start the trigger
+  digitalWrite(trigPin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigPin, LOW);
 
-    // Reads the echoPin, returns the sound wave travel time in microseconds
-    durSum = pulseIn(echoPin, HIGH);
+  // Reads the echoPin, returns the sound wave travel time in microseconds
+  durSum = pulseIn(echoPin, HIGH);
 
-    Serial.print(durSum);
+  Serial.println("durSum:" + (String)durSum);
 
-    duration = durSum + duration;
+  duration = durSum + duration;
 
-    Serial.print(duration);
-    i++;
-  }
+  Serial.println("duration: " + (String)duration);
+  //i++;
+  //}
 
   // calculating the duration mean on 10 measurement
   // duration = duration / 10;
@@ -99,9 +100,7 @@ void loop()
   // distance = duration / 58;
 
   // Displays the distance on the Serial Monitor
-  Serial.println("Distance: ");
-  Serial.println(distance);
-  Serial.println(" cm");
+  Serial.println("Distance: " + (String) distance + " cm");
 
   /*
     COMPUTE VOLUME OF THE WATER IN THE WELL
@@ -111,14 +110,17 @@ void loop()
   /*
     SENDING DATA TO SERVER
   */
-  sendData(distance, volume);
+  //sendData(distance, volume);
 
   // Delay 10 seconds before next reading.
-  //delay(10000);
+  // delay(10000);
   // Delay 3600000 mS (1 hour) before next reading.
   // delay(3600000);
+  // 12 h before next reading.
+  // delay(43200000);
   // 24 h before next reading.
   delay(86400000);
+  
 }
 
 /**
