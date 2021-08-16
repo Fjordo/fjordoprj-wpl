@@ -110,7 +110,7 @@ void loop()
   /*
     SENDING DATA TO SERVER
   */
-  //sendData(distance, volume);
+  sendData(distance, volume);
 
   // Delay 10 seconds before next reading.
   // delay(10000);
