@@ -3,8 +3,8 @@
    	
    	$link=Connection();
 
-	$distanza=$_POST["dist"];
-	$volume=$_POST["vol"];
+	$distanza = intval($_POST["dist"]);
+	$volume   = floatval($_POST["vol"]);
 
 	$query = "INSERT INTO `wpl`(`distanza`, `volume_residuo`, `data_misurazione`) VALUES (".$distanza.",".$volume.", NOW())"; 
    	
