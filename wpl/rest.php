@@ -32,7 +32,7 @@ $set.=($values[$i]===null?'NULL':'"'.$values[$i].'"');
 // create SQL based on HTTP method
 switch ($method) {
 case 'GET':
-    $sql = "SELECT distanza, volume_residuo, data_misurazione FROM wpl WHERE data_misurazione <= (NOW() - INTERVAL 3 MONTH) ORDER BY data_misurazione DESC"; break;
+    $sql = "SELECT distanza, volume_residuo, data_misurazione FROM wpl WHERE data_misurazione >= (NOW() - INTERVAL 3 MONTH) ORDER BY data_misurazione DESC"; break;
 case 'PUT':
     $sql = "SELECT distanza, volume_residuo, data_misurazione FROM wpl ORDER BY data_misurazione DESC"; break;
 case 'POST':
@@ -47,7 +47,7 @@ $result = mysqli_query($link,$sql);
 // die if SQL statement failed
 if (!$result) {
     http_response_code(404);
-    die(mysqli_error());
+    die(mysqli_error($link));
 }
 
 // print results, insert id or affected row count
