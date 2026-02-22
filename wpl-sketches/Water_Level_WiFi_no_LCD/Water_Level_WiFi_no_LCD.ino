@@ -135,7 +135,8 @@ double computeVolume(long distance)
     int wellHeight = 30;                    // measure in decimeters
     double wellDiameter = 20;               // measure in dm
     double waterHeight = (distance - 40) / 10; // subtract a default of 4 decimeters from the height measured by the sensor. Then compute the total in decimeters
-    double base = wellDiameter * 3.14159;
+    double radius = wellDiameter / 2.0;
+    double base = radius * radius * 3.14159;  // area = π × r²
     return (base * waterHeight);
   } else {
     return -1;
