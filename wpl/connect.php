@@ -1,17 +1,17 @@
 <?php
 
-	function Connection(){
-		$server="my_ip_address";
-		$user="my_username";
-		$pass="my_password";
-		$db="my_fjordoprj";
-	   	
-		$connection = mysqli_connect($server, $user, $pass, $db);
+function Connection() {
+    $server = getenv('DB_HOST');
+    $user   = getenv('DB_USER');
+    $pass   = getenv('DB_PASS');
+    $db     = getenv('DB_NAME');
 
-		if (!$connection) {
-	    	die('MySQL ERROR: ' . mysql_error());
-		}
+    $connection = mysqli_connect($server, $user, $pass, $db);
 
-		return $connection;
-	}
-?>
+    if (!$connection) {
+        die('MySQL ERROR: ' . mysqli_connect_error());
+    }
+
+    mysqli_set_charset($connection, 'utf8');
+    return $connection;
+}
