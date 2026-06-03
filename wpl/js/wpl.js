@@ -11,6 +11,21 @@ function parseData(misurazioni) {
     return measurements;
 }
 
+function parseVolumeData(misurazioni) {
+    var measurements = [];
+    misurazioni.forEach(function (element) {
+        var vol = parseFloat(element.volume_residuo);
+        // Exclude error sentinel (-1) and negative values
+        if (!isNaN(vol) && vol >= 0) {
+            measurements.push([
+                new Date(element.data_misurazione).getTime(),
+                Math.round(vol * 100) / 100
+            ]);
+        }
+    });
+    return measurements;
+}
+
 function formatTimeSince(date) {
     var diffMs  = Date.now() - date.getTime();
     var diffMin = Math.floor(diffMs / 60000);

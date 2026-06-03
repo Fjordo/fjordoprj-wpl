@@ -37,18 +37,23 @@
 
                     var distanze = parseData(data);
 
+                    var volumi = parseVolumeData(data);
+
                     if (!chart) {
                         chart = Highcharts.chart('container', {
                             chart: { zoomType: 'x' },
-                            title: { text: 'Water distance from sensor' },
+                            title: { text: 'Water Level Monitor' },
                             subtitle: {
                                 text: document.ontouchstart === undefined
                                     ? 'Click and drag to zoom'
                                     : 'Pinch to zoom'
                             },
                             xAxis: { type: 'datetime' },
-                            yAxis: { title: { text: 'Distance (cm)' } },
-                            legend: { enabled: false },
+                            yAxis: [
+                                { title: { text: 'Distance from sensor (cm)' } },
+                                { title: { text: 'Residual volume (dm³)' }, opposite: true, min: 0 }
+                            ],
+                            legend: { enabled: true },
                             plotOptions: {
                                 area: {
                                     fillColor: {
@@ -64,14 +69,26 @@
                                     threshold: null
                                 }
                             },
-                            series: [{
-                                type: 'area',
-                                name: 'Distance from sensor (cm)',
-                                data: distanze
-                            }]
+                            series: [
+                                {
+                                    type: 'area',
+                                    name: 'Distance (cm)',
+                                    yAxis: 0,
+                                    data: distanze
+                                },
+                                {
+                                    type: 'line',
+                                    name: 'Volume (dm³)',
+                                    yAxis: 1,
+                                    color: Highcharts.getOptions().colors[1],
+                                    marker: { radius: 2 },
+                                    data: volumi
+                                }
+                            ]
                         });
                     } else {
                         chart.series[0].setData(distanze, true);
+                        chart.series[1].setData(volumi, true);
                     }
                 })
                 .catch(function (err) {
