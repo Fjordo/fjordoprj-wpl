@@ -133,19 +133,37 @@ double computeVolume(double distance) {
 
 
 /*
+  Returns the current Unix timestamp from the Yun's Linux side.
+  The AR9331 Linux SoC syncs time via NTP automatically, so this value
+  is reliable after the first boot that has internet access.
+*/
+String getArduinoTimestamp() {
+  Process p;
+  p.runShellCommand("date +%s");
+  String ts = "";
+  while (p.available() > 0) ts += (char)p.read();
+  ts.trim();
+  return ts;
+}
+
+
+/*
   SENDING DATA TO SERVER
-  Sends distance and volume via HTTPS POST to add.php.
+  Sends distance, volume and the Arduino NTP timestamp via HTTPS POST to add.php.
   Retries up to MAX_RETRIES times on failure; checks HTTP response code.
   Returns true on success (HTTP 201), false if all retries fail.
 */
 bool sendData(double distance, double volume) {
+  String ts = getArduinoTimestamp();
+
   for (int attempt = 1; attempt <= MAX_RETRIES; attempt++) {
     Process p; // Create a process and call it "p"
     p.runShellCommand(
       "curl -s -o /dev/null -w \"%{http_code}\" -X POST " + SERVER_URL +
       " -F token=" + API_TOKEN +
       " -F dist=" + String((int)distance) +
-      " -F vol=" + String(volume)
+      " -F vol=" + String(volume) +
+      " -F ts=" + ts
     );
 
     // Read HTTP response code from curl output

@@ -36,8 +36,14 @@ if ((int) mysqli_fetch_row($rl)[0] > 0) {
     die('Too Many Requests: wait before sending a new measurement');
 }
 
-$stmt = mysqli_prepare($link, "INSERT INTO `wpl` (`distanza`, `volume_residuo`, `data_misurazione`) VALUES (?, ?, NOW())");
-mysqli_stmt_bind_param($stmt, 'id', $distanza, $volume);
+// Optional NTP timestamp from the Arduino Yun Linux side (Unix seconds)
+$ts_arduino = null;
+if (isset($_POST['ts']) && ctype_digit($_POST['ts'])) {
+    $ts_arduino = date('Y-m-d H:i:s', (int) $_POST['ts']);
+}
+
+$stmt = mysqli_prepare($link, "INSERT INTO `wpl` (`distanza`, `volume_residuo`, `data_misurazione`, `timestamp_arduino`) VALUES (?, ?, NOW(), ?)");
+mysqli_stmt_bind_param($stmt, 'ids', $distanza, $volume, $ts_arduino);
 mysqli_stmt_execute($stmt);
 mysqli_stmt_close($stmt);
 mysqli_close($link);
