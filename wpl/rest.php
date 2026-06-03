@@ -9,12 +9,29 @@ $link = Connection();
 
 $table = preg_replace('/[^a-z0-9_]+/i', '', array_shift($request));
 
+// Whitelist of allowed range values mapped to SQL intervals
+$range_map = [
+    '1m'  => 'INTERVAL 1 MONTH',
+    '3m'  => 'INTERVAL 3 MONTH',
+    '6m'  => 'INTERVAL 6 MONTH',
+    '1y'  => 'INTERVAL 1 YEAR',
+    'all' => null,
+];
+$range    = isset($_GET['range']) && array_key_exists($_GET['range'], $range_map) ? $_GET['range'] : '3m';
+$interval = $range_map[$range];
+
 switch ($method) {
     case 'GET':
-        $sql = "SELECT distanza, volume_residuo, data_misurazione
-                FROM wpl
-                WHERE data_misurazione >= (NOW() - INTERVAL 3 MONTH)
-                ORDER BY data_misurazione DESC";
+        if ($interval !== null) {
+            $sql = "SELECT distanza, volume_residuo, data_misurazione
+                    FROM wpl
+                    WHERE data_misurazione >= (NOW() - $interval)
+                    ORDER BY data_misurazione DESC";
+        } else {
+            $sql = "SELECT distanza, volume_residuo, data_misurazione
+                    FROM wpl
+                    ORDER BY data_misurazione DESC";
+        }
         break;
     default:
         http_response_code(405);

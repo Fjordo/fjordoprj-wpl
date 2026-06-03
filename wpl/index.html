@@ -20,17 +20,27 @@
 
     <div id="last-update-status">Loading...</div>
     <div id="refresh-countdown"></div>
+
+    <div id="range-controls">
+        <button type="button" class="range-btn" data-range="1m">1 Month</button>
+        <button type="button" class="range-btn active" data-range="3m">3 Months</button>
+        <button type="button" class="range-btn" data-range="6m">6 Months</button>
+        <button type="button" class="range-btn" data-range="1y">1 Year</button>
+        <button type="button" class="range-btn" data-range="all">All</button>
+    </div>
+
     <div id="container"></div>
 
     <script>
         var chart;
         var countdown;
         var countdownSecs = REFRESH_INTERVAL_MS / 1000;
+        var currentRange = '3m';
 
-        var API_URL = "https://fjordoprj.altervista.org/wpl/rest.php/my_fjordoprj/";
+        var API_BASE = "https://fjordoprj.altervista.org/wpl/rest.php/my_fjordoprj/";
 
         function loadData() {
-            fetch(API_URL)
+            fetch(API_BASE + '?range=' + currentRange)
                 .then(function (r) { return r.json(); })
                 .then(function (data) {
                     updateStatus(data);
@@ -121,7 +131,21 @@
                 'Next refresh in ' + m + ':' + (s < 10 ? '0' : '') + s;
         }
 
-        document.addEventListener('DOMContentLoaded', loadData);
+        document.addEventListener('DOMContentLoaded', function () {
+            // Wire up range buttons
+            document.querySelectorAll('.range-btn').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    document.querySelectorAll('.range-btn').forEach(function (b) {
+                        b.classList.remove('active');
+                    });
+                    btn.classList.add('active');
+                    currentRange = btn.getAttribute('data-range');
+                    loadData();
+                });
+            });
+
+            loadData();
+        });
     </script>
 </body>
 
