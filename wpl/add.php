@@ -1,4 +1,7 @@
 <?php
+header('X-Content-Type-Options: nosniff');
+header('X-Frame-Options: DENY');
+
 include("connect.php");
 
 // Token authentication
