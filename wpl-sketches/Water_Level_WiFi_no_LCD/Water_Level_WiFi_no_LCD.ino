@@ -29,132 +29,162 @@
   Arduino YUN wi-fi has to be previously configured.
   See https://www.twilio.com/blog/2015/02/arduino-wifi-getting-started-arduino-yun.html for a guide.
 
+  -----------------------
+  API TOKEN
+  Set API_TOKEN below to match the value of API_TOKEN in wpl/.env on the server.
 */
 
-// include the library code:
-#include <LiquidCrystal.h>
 #include <Process.h>
 
-#define echoPin 7 // Echo Pin, green wire
-#define trigPin 8 // Trigger Pin, yellow wire
-#define LEDPin 13 // Onboard LED
+#define ECHO_PIN 7  // Echo Pin, green wire
+#define TRIG_PIN 8  // Trigger Pin, yellow wire
+#define LED_PIN  13 // Onboard LED
 
-int maximumRange = 300;  // Maximum range needed in cm
-int minimumRange = 0;    // Minimum range needed
-double duration, durSum; // Duration used to calculate distance, and variable to calculate the duration mean
-double distance;         // Distance from the water surface
-double volume;           // Residual volume
+#define NUM_SAMPLES      5    // readings per measurement cycle — median is used
+#define MAX_RANGE_CM   300    // Maximum range needed in cm
+#define MIN_RANGE_CM     2    // Minimum range needed
+#define SENSOR_OFFSET_CM 40   // sensor is mounted 40 cm above max water level
 
-String server = "http://fjordoprj.altervista.org";
+#define MAX_RETRIES 3         // HTTP POST retries before giving up
 
-void setup()
-{
+// *** Set this token to match the API_TOKEN value in wpl/.env ***
+const String API_TOKEN  = "your_secret_token_here";
+const String SERVER_URL = "https://fjordoprj.altervista.org/wpl/add.php";
+
+// Well dimensions (no-LCD variant)
+const int    WELL_HEIGHT_DM   = 30;   // measure in decimeters
+const double WELL_DIAMETER_DM = 20.0; // measure in decimeters
+
+
+/*
+  Takes NUM_SAMPLES readings from the HC-SR04, applies a bubble-sort median
+  to reject outlier echoes, and returns the distance in cm.
+  Returns -1 if the median falls outside the sensor's valid range.
+*/
+double measureDistance() {
+  double readings[NUM_SAMPLES];
+
+  /* The following trigPin/echoPin cycle is used to determine the
+     distance of the nearest object by bouncing soundwaves off of it.
+     It gets NUM_SAMPLES measures and returns the median. */
+  for (int i = 0; i < NUM_SAMPLES; i++) {
+    // Clears the trigPin condition
+    digitalWrite(TRIG_PIN, LOW);
+    delayMicroseconds(2);
+
+    // Sets the trigPin HIGH (ACTIVE) for 10 microseconds to start the trigger
+    digitalWrite(TRIG_PIN, HIGH);
+    delayMicroseconds(10);
+    digitalWrite(TRIG_PIN, LOW);
+
+    // Reads the echoPin, returns the sound wave travel time in microseconds
+    // 30 ms timeout avoids blocking if no echo is received
+    double duration = pulseIn(ECHO_PIN, HIGH, 30000UL);
+    readings[i] = duration * 0.034 / 2.0; // Speed of sound wave divided by 2 (go and back)
+    delay(60); // minimum 60 ms between pulses per datasheet
+  }
+
+  // Bubble sort to find median — discards high and low outliers
+  for (int i = 0; i < NUM_SAMPLES - 1; i++) {
+    for (int j = i + 1; j < NUM_SAMPLES; j++) {
+      if (readings[j] < readings[i]) {
+        double tmp = readings[i];
+        readings[i] = readings[j];
+        readings[j] = tmp;
+      }
+    }
+  }
+
+  double median = readings[NUM_SAMPLES / 2];
+
+  // Discard reading if out of sensor range
+  if (median < MIN_RANGE_CM || median > MAX_RANGE_CM) {
+    return -1;
+  }
+
+  return median;
+}
+
+
+/*
+  COMPUTE VOLUME OF THE WATER IN THE WELL
+  The sensor is about 40 cm over the maximum water level, so we compensate
+  by subtracting SENSOR_OFFSET_CM before converting to decimeters.
+*/
+double computeVolume(double distance) {
+  if (distance <= 0) return -1;
+
+  // outer well dimension: base diameter of 2 meters, 3 meters of height
+  // inner well dimension
+  double waterHeightDm = (distance - SENSOR_OFFSET_CM) / 10.0; // convert cm to dm
+  if (waterHeightDm < 0) waterHeightDm = 0;
+
+  double radius = WELL_DIAMETER_DM / 2.0;
+  double base   = radius * radius * 3.14159; // area = π × r²
+  return base * waterHeightDm;
+}
+
+
+/*
+  SENDING DATA TO SERVER
+  Sends distance and volume via HTTPS POST to add.php.
+  Retries up to MAX_RETRIES times on failure; checks HTTP response code.
+  Returns true on success (HTTP 201), false if all retries fail.
+*/
+bool sendData(double distance, double volume) {
+  for (int attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    Process p; // Create a process and call it "p"
+    p.runShellCommand(
+      "curl -s -o /dev/null -w \"%{http_code}\" -X POST " + SERVER_URL +
+      " -F token=" + API_TOKEN +
+      " -F dist=" + String((int)distance) +
+      " -F vol=" + String(volume)
+    );
+
+    // Read HTTP response code from curl output
+    String httpCode = "";
+    while (p.available() > 0) {
+      httpCode += (char)p.read();
+    }
+    httpCode.trim();
+
+    Serial.println("Attempt " + String(attempt) + " HTTP " + httpCode);
+
+    if (httpCode == "201") {
+      return true;
+    }
+
+    if (attempt < MAX_RETRIES) {
+      delay(5000); // wait 5 s before retry
+    }
+  }
+  return false;
+}
+
+
+void setup() {
   // Initialize Bridge
   Bridge.begin();
 
   // set up the SONAR
   Serial.begin(9600);
-  pinMode(trigPin, OUTPUT);
-  pinMode(echoPin, INPUT);
-  pinMode(LEDPin, OUTPUT); // Use LED indicator (if required)
+  pinMode(TRIG_PIN, OUTPUT);
+  pinMode(ECHO_PIN, INPUT);
+  pinMode(LED_PIN, OUTPUT); // Use LED indicator (if required)
 }
 
-void loop()
-{
-  /* The following trigPin/echoPin cycle is used to determine the
-    distance of the nearest object by bouncing soundwaves off of it.
-    It gets 10 measures and does an arithmentic mean
-  */
 
-  //  int i = 0;
-  duration = 0; //reset value for next cicle
+void loop() {
+  double distance = measureDistance();
+  Serial.println("Distance: " + String(distance) + " cm");
 
-  //while (i < 10) {
+  double volume = computeVolume(distance);
+  Serial.println("Volume: " + String(volume) + " dm3");
 
-  // Clears the trigPin condition
-  digitalWrite(trigPin, LOW);
-  delayMicroseconds(2);
+  bool ok = sendData(distance, volume);
+  // LED on if all retries failed, off on success
+  digitalWrite(LED_PIN, ok ? LOW : HIGH);
 
-  // Sets the trigPin HIGH (ACTIVE) for 10 microseconds to start the trigger
-  digitalWrite(trigPin, HIGH);
-  delayMicroseconds(10);
-  digitalWrite(trigPin, LOW);
-
-  // Reads the echoPin, returns the sound wave travel time in microseconds
-  durSum = pulseIn(echoPin, HIGH);
-
-  Serial.println("durSum:" + (String)durSum);
-
-  duration = durSum + duration;
-
-  Serial.println("duration: " + (String)duration);
-  //i++;
-  //}
-
-  // calculating the duration mean on 10 measurement
-  // duration = duration / 10;
-
-  // Calculating the distance
-  // Speed of sound wave divided by 2 (go and back)
-  distance = duration * 0.034 / 2;
-  // distance = duration / 58;
-
-  // Displays the distance on the Serial Monitor
-  Serial.println("Distance: " + (String) distance + " cm");
-
-  /*
-    COMPUTE VOLUME OF THE WATER IN THE WELL
-  */
-  volume = computeVolume(distance);
-
-  /*
-    SENDING DATA TO SERVER
-  */
-  sendData(distance, volume);
-
-  // Delay 10 seconds before next reading.
-  // delay(10000);
-  // Delay 3600000 mS (1 hour) before next reading.
-  // delay(3600000);
-  // 12 h before next reading.
-  // delay(43200000);
-  // 24 h before next reading.
-  delay(86400000);
-  
-}
-
-/**
-   Computes the water volume inside the well
-   the sensor is about 40 cm over the maximum water level, so I compensate this subtracting 40 cm.
-*/
-double computeVolume(long distance)
-{
-  if (distance > 0) {
-    // outer well dimension: base diameter of 2 meters, 3 meters of height
-    // inner well dimension
-    int wellHeight = 30;                    // measure in decimeters
-    double wellDiameter = 20;               // measure in dm
-    double waterHeight = (distance - 40) / 10; // subtract a default of 4 decimeters from the height measured by the sensor. Then compute the total in decimeters
-    double radius = wellDiameter / 2.0;
-    double base = radius * radius * 3.14159;  // area = π × r²
-    return (base * waterHeight);
-  } else {
-    return -1;
-  }
-}
-
-void sendData(long distance, double volume)
-{
-
-  Process p; // Create a process and call it "p"
-
-  p.runShellCommand("curl -X POST https://fjordoprj.altervista.org/wpl/add.php -F dist=" + (String)distance + " -F vol=" + (String)volume);
-
-  // A process output can be read with the stream methods
-  //  while (p.available() > 0) {
-  //    char c = p.read();
-  //    Serial.print(c);
-  //  }
-  // Ensure the last bit of data is sent.
-  //  Serial.flush();
+  // Delay 24 h before next reading.
+  delay(86400000UL);
 }
