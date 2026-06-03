@@ -27,6 +27,15 @@ if ($distanza < 0 || $distanza > 500) {
 
 $link = Connection();
 
+// Rate limiting: reject if a measurement was already stored in the last 5 minutes.
+// Prevents flooding while leaving room for the Arduino's 5-second retry gap.
+$rl = mysqli_query($link, "SELECT COUNT(*) FROM wpl WHERE data_misurazione >= (NOW() - INTERVAL 5 MINUTE)");
+if ((int) mysqli_fetch_row($rl)[0] > 0) {
+    http_response_code(429);
+    mysqli_close($link);
+    die('Too Many Requests: wait before sending a new measurement');
+}
+
 $stmt = mysqli_prepare($link, "INSERT INTO `wpl` (`distanza`, `volume_residuo`, `data_misurazione`) VALUES (?, ?, NOW())");
 mysqli_stmt_bind_param($stmt, 'id', $distanza, $volume);
 mysqli_stmt_execute($stmt);
