@@ -12,6 +12,6 @@ function Connection() {
         die('MySQL ERROR: ' . mysqli_connect_error());
     }
 
-    mysqli_set_charset($connection, 'utf8');
+    mysqli_set_charset($connection, 'utf8mb4');
     return $connection;
 }
