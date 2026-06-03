@@ -1,10 +1,11 @@
 <?php
+declare(strict_types=1);
 
-function Connection() {
-    $server = getenv('DB_HOST');
-    $user   = getenv('DB_USER');
-    $pass   = getenv('DB_PASS');
-    $db     = getenv('DB_NAME');
+function Connection(): \mysqli {
+    $server = (string)(getenv('DB_HOST') ?: '');
+    $user   = (string)(getenv('DB_USER') ?: '');
+    $pass   = (string)(getenv('DB_PASS') ?: '');
+    $db     = (string)(getenv('DB_NAME') ?: '');
 
     $connection = mysqli_connect($server, $user, $pass, $db);
 

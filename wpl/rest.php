@@ -1,13 +1,9 @@
 <?php
+declare(strict_types=1);
+
 include("connect.php");
 
-$method  = $_SERVER['REQUEST_METHOD'];
-$request = explode('/', trim($_SERVER['PATH_INFO'], '/'));
-$input   = json_decode(file_get_contents('php://input'), true);
-
-$link = Connection();
-
-$table = preg_replace('/[^a-z0-9_]+/i', '', array_shift($request));
+$method = $_SERVER['REQUEST_METHOD'];
 
 // Whitelist of allowed range values mapped to SQL intervals
 $range_map = [
@@ -38,6 +34,7 @@ switch ($method) {
         die('Method Not Allowed');
 }
 
+$link   = Connection();
 $result = mysqli_query($link, $sql);
 
 if (!$result) {
@@ -48,6 +45,7 @@ if (!$result) {
 header('Content-Type: application/json');
 header('X-Content-Type-Options: nosniff');
 header('X-Frame-Options: DENY');
+
 echo '[';
 for ($i = 0; $i < mysqli_num_rows($result); $i++) {
     echo ($i > 0 ? ',' : '') . json_encode(mysqli_fetch_object($result));

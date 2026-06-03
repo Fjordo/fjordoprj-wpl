@@ -1,4 +1,6 @@
 <?php
+declare(strict_types=1);
+
 include("connect.php");
 
 $link    = Connection();
@@ -12,6 +14,8 @@ if ($see_all) {
 ?>
 <html>
 <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sensor Data</title>
 </head>
 <body>
@@ -38,9 +42,9 @@ if ($see_all) {
         <?php if ($result !== false): ?>
             <?php while ($row = mysqli_fetch_array($result)): ?>
                 <tr>
-                    <td>&nbsp;<?php echo htmlspecialchars($row['distanza']); ?>&nbsp;</td>
-                    <td>&nbsp;<?php echo htmlspecialchars($row['volume_residuo']); ?>&nbsp;</td>
-                    <td>&nbsp;<?php echo htmlspecialchars($row['data_misurazione']); ?>&nbsp;</td>
+                    <td>&nbsp;<?php echo htmlspecialchars((string)$row['distanza']); ?>&nbsp;</td>
+                    <td>&nbsp;<?php echo htmlspecialchars((string)$row['volume_residuo']); ?>&nbsp;</td>
+                    <td>&nbsp;<?php echo htmlspecialchars((string)$row['data_misurazione']); ?>&nbsp;</td>
                 </tr>
             <?php endwhile; ?>
             <?php mysqli_free_result($result); ?>

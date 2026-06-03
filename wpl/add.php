@@ -1,24 +1,26 @@
 <?php
+declare(strict_types=1);
+
 header('X-Content-Type-Options: nosniff');
 header('X-Frame-Options: DENY');
 
 include("connect.php");
 
 // Token authentication
-$token = isset($_POST['token']) ? $_POST['token'] : '';
-if ($token !== getenv('API_TOKEN')) {
+$token = isset($_POST['token']) ? (string)$_POST['token'] : '';
+if ($token !== (string)(getenv('API_TOKEN') ?: '')) {
     http_response_code(403);
     die('Forbidden');
 }
 
 // Input validation
-$distanza = isset($_POST['dist']) ? intval($_POST['dist']) : null;
-$volume   = isset($_POST['vol'])  ? floatval($_POST['vol']) : null;
-
-if ($distanza === null || $volume === null) {
+if (!isset($_POST['dist'], $_POST['vol'])) {
     http_response_code(400);
     die('Bad Request: missing dist or vol');
 }
+
+$distanza = (int)$_POST['dist'];
+$volume   = (float)$_POST['vol'];
 
 if ($distanza < 0 || $distanza > 500) {
     http_response_code(400);
@@ -38,8 +40,8 @@ if ((int) mysqli_fetch_row($rl)[0] > 0) {
 
 // Optional NTP timestamp from the Arduino Yun Linux side (Unix seconds)
 $ts_arduino = null;
-if (isset($_POST['ts']) && ctype_digit($_POST['ts'])) {
-    $ts_arduino = date('Y-m-d H:i:s', (int) $_POST['ts']);
+if (isset($_POST['ts']) && ctype_digit((string)$_POST['ts'])) {
+    $ts_arduino = date('Y-m-d H:i:s', (int)$_POST['ts']);
 }
 
 $stmt = mysqli_prepare($link, "INSERT INTO `wpl` (`distanza`, `volume_residuo`, `data_misurazione`, `timestamp_arduino`) VALUES (?, ?, NOW(), ?)");
