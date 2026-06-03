@@ -34,7 +34,7 @@ Arduino Yun + HC-SR04
 |----------------|--------------------------------------------|
 | Microcontroller| Arduino Yun (ATmega32U4 + AR9331 Linux SoC)|
 | Sensor         | HC-SR04 ultrasonic distance sensor         |
-| Optional       | 16×2 LCD display (for the LCD variant)     |
+| Optional       | 16x2 LCD display (for the LCD variant)     |
 
 ### Pin Connections — HC-SR04
 
@@ -56,7 +56,7 @@ Arduino Yun + HC-SR04
 | D6      | 3           |
 | D7      | 2           |
 | R/W     | GND         |
-| VO      | 10 kΩ wiper |
+| VO      | 10kOhm wiper|
 
 ---
 
@@ -64,26 +64,30 @@ Arduino Yun + HC-SR04
 
 Two variants live in `wpl-sketches/`:
 
-| Sketch                        | Display  | Upload interval | Well dims (dm)  |
-|-------------------------------|----------|-----------------|-----------------|
-| `Water_Level_WiFi_no_LCD.ino` | None     | 24 h            | h=30, d=20      |
-| `Water_Level_WiFi.ino`        | 16×2 LCD | 1 h             | h=22, d=23      |
+| Sketch                        | Display  | Upload interval | Well dims (dm) |
+|-------------------------------|----------|-----------------|----------------|
+| `Water_Level_WiFi_no_LCD.ino` | None     | 24 h            | h=30, d=20     |
+| `Water_Level_WiFi.ino`        | 16x2 LCD | 1 h             | h=22, d=23     |
 
-### Distance → Volume formula
+### Distance to Volume formula
 
 ```text
-waterHeight (dm) = (sensor_distance_cm − 40) / 10
-base (dm²)       = π × (wellDiameter / 2)²
-volume (dm³)     = base × waterHeight
+waterHeight (dm) = (sensor_distance_cm - 40) / 10
+base (dm2)       = pi x (wellDiameter / 2)^2
+volume (dm3)     = base x waterHeight
 ```
 
-The −40 cm offset compensates for the sensor mounting position above the maximum water level.
+The -40 cm offset compensates for the sensor mounting position above the maximum water level.
 
 ### Measurement robustness
 
-Each reading fires the HC-SR04 **5 times** and takes the **median** value, discarding spurious echoes. If the median falls outside the valid range (2–300 cm) the reading is treated as an error.
+Each reading fires the HC-SR04 **5 times** and takes the **median** value, discarding spurious echoes. If the median falls outside the valid range (2-300 cm) the reading is treated as an error.
 
 The `sendData()` function **retries up to 3 times** (with a 5-second pause between attempts) and uses the HTTP response code to detect failures. The onboard LED stays on if all retries fail.
+
+### NTP timestamp
+
+Both sketches call `getArduinoTimestamp()` before each POST. The function runs `date +%s` on the Yun's Linux SoC (AR9331), which syncs time via NTP automatically. The Unix timestamp is sent as the `ts` field and stored in the `timestamp_arduino` column alongside the server-side `NOW()` timestamp, making it easy to detect clock drift.
 
 ### API token
 
@@ -106,16 +110,16 @@ The Arduino Yun's built-in WiFi must be configured before flashing. Follow the [
 
 ## Web Application (`wpl/`)
 
-| File              | Role                                                    |
-|-------------------|---------------------------------------------------------|
-| `add.php`         | POST endpoint — receives sensor data and inserts into DB|
-| `rest.php`        | GET endpoint — returns last 3 months of data as JSON    |
-| `index.html`      | Interactive Highcharts chart (auto-refresh every 10 min)|
-| `index.php`       | Raw HTML table view (`?all=true` for all records)       |
-| `connect.php`     | Shared MySQL connection helper (reads from environment) |
-| `js/wpl.js`       | Data parser and status helpers for the dashboard        |
-| `css/wpl.css`     | Dashboard stylesheet                                    |
-| `.env.example`    | Template for required environment variables             |
+| File           | Role                                                       |
+|----------------|------------------------------------------------------------|
+| `add.php`      | POST endpoint — token auth, rate limiting, prepared INSERT |
+| `rest.php`     | GET endpoint — returns data for selected time range        |
+| `index.html`   | Highcharts dashboard (auto-refresh, dual series, range btn)|
+| `index.php`    | Raw HTML table view (`?all=true` for all records)          |
+| `connect.php`  | Shared MySQL connection helper (reads from environment)    |
+| `js/wpl.js`    | Data parsers and last-update status helpers                |
+| `css/wpl.css`  | Dashboard stylesheet                                       |
+| `.env.example` | Template for required environment variables                |
 
 ### Environment variables
 
@@ -129,21 +133,36 @@ Copy `wpl/.env.example` to `wpl/.env` and fill in real values. The file is exclu
 | `DB_NAME`   | Database name                            |
 | `API_TOKEN` | Shared secret for authenticating Arduino |
 
+### Security
+
+- All PHP files use `declare(strict_types=1)`.
+- `add.php` validates the `API_TOKEN`, range-checks inputs, uses a prepared statement, and enforces a 5-minute rate limit.
+- Both endpoints send `X-Content-Type-Options: nosniff` and `X-Frame-Options: DENY`.
+
 ### API
 
 **POST** `/wpl/add.php`
 
-| Parameter | Type   | Description                            |
-|-----------|--------|----------------------------------------|
-| `token`   | string | Must match `API_TOKEN` env variable    |
-| `dist`    | int    | Sensor distance in cm (0–500)          |
-| `vol`     | float  | Computed volume in dm³                 |
+| Parameter | Type   | Description                         |
+|-----------|--------|-------------------------------------|
+| `token`   | string | Must match `API_TOKEN` env variable |
+| `dist`    | int    | Sensor distance in cm (0-500)       |
+| `vol`     | float  | Computed volume in dm3              |
+| `ts`      | int    | Unix timestamp from Arduino NTP     |
 
-Returns `201 Created` on success, `403 Forbidden` on wrong token, `400 Bad Request` on invalid input.
+Returns `201 Created` on success, `403 Forbidden` on wrong token, `400 Bad Request` on invalid input, `429 Too Many Requests` if a measurement was stored in the last 5 minutes.
 
-**GET** `/wpl/rest.php/my_fjordoprj/`
+**GET** `/wpl/rest.php/my_fjordoprj/?range=<range>`
 
-Returns a JSON array of the last 3 months of measurements:
+| `range` value | Data returned        |
+|---------------|----------------------|
+| `1m`          | Last 1 month         |
+| `3m` (default)| Last 3 months        |
+| `6m`          | Last 6 months        |
+| `1y`          | Last 1 year          |
+| `all`         | All records          |
+
+Returns a JSON array:
 
 ```json
 [
@@ -161,22 +180,27 @@ Returns a JSON array of the last 3 months of measurements:
 
 ```sql
 CREATE TABLE `wpl` (
-  `id`               int(11)  NOT NULL AUTO_INCREMENT,
-  `distanza`         int(11)  NOT NULL DEFAULT 0,      -- cm from sensor
-  `volume_residuo`   float    DEFAULT NULL,             -- dm³
-  `data_misurazione` datetime DEFAULT CURRENT_TIMESTAMP,
+  `id`                int(11)  NOT NULL AUTO_INCREMENT,
+  `distanza`          int(11)  NOT NULL DEFAULT 0,
+  `volume_residuo`    float    DEFAULT NULL COMMENT 'volume residuo in dm3',
+  `data_misurazione`  datetime DEFAULT CURRENT_TIMESTAMP,
+  `timestamp_arduino` datetime DEFAULT NULL
+                      COMMENT 'NTP-synced timestamp from Arduino Yun Linux',
   PRIMARY KEY (`id`),
   INDEX `idx_data_misurazione` (`data_misurazione`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 ```
 
 ### Migrations
 
-Run scripts in `db/` in order on the production database:
+Run scripts in `db/` **in order** on the production database:
 
-| File                                  | Description                                 |
-|---------------------------------------|---------------------------------------------|
-| `migration_001_innodb_and_index.sql`  | Convert to InnoDB + add date index          |
+| File                                      | Description                              |
+|-------------------------------------------|------------------------------------------|
+| migration_001_innodb_and_index.sql        | Convert to InnoDB + add date index       |
+| migration_002_fix_volume_unit_comment.sql | Fix column comment (dm3 not m3)          |
+| migration_003_utf8mb4.sql                 | Convert charset to utf8mb4               |
+| migration_004_arduino_timestamp.sql       | Add timestamp_arduino column             |
 
 Database backups are stored in `db/`.
 
@@ -186,24 +210,27 @@ Database backups are stored in `db/`.
 
 ```text
 fjordoprj-wpl/
-├── db/                                    # SQL backups and migrations
+├── db/
 │   ├── wpl_backup_2026-02-22.sql
-│   └── migration_001_innodb_and_index.sql
-├── wpl/                                   # Web application
-│   ├── .env.example                       # Environment variable template
-│   ├── add.php                            # Write endpoint
-│   ├── rest.php                           # Read API
-│   ├── index.html                         # Chart dashboard
-│   ├── index.php                          # Table view
-│   ├── connect.php                        # DB connection helper
+│   ├── migration_001_innodb_and_index.sql
+│   ├── migration_002_fix_volume_unit_comment.sql
+│   ├── migration_003_utf8mb4.sql
+│   └── migration_004_arduino_timestamp.sql
+├── wpl/
+│   ├── .env.example
+│   ├── add.php
+│   ├── rest.php
+│   ├── index.html
+│   ├── index.php
+│   ├── connect.php
 │   ├── css/
-│   │   └── wpl.css                        # Dashboard stylesheet
+│   │   └── wpl.css
 │   └── js/
-│       └── wpl.js                         # Data parser + status helpers
+│       └── wpl.js
 └── wpl-sketches/
-    ├── Water_Level_WiFi/                  # LCD variant
+    ├── Water_Level_WiFi/
     │   └── Water_Level_WiFi.ino
-    └── Water_Level_WiFi_no_LCD/           # No-display variant (active)
+    └── Water_Level_WiFi_no_LCD/
         └── Water_Level_WiFi_no_LCD.ino
 ```
 
